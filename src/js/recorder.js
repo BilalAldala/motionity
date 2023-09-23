@@ -156,19 +156,46 @@ async function record() {
         bitsPerSecond: 3200000,
       });
       recorder.ondataavailable = (e) => chunks.push(e.data);
-      recorder.onstop = (e) => {
-        stopAnim();
-        downloadRecording(chunks);
-        animate(false, 0);
-        $('#seekbar').offset({
-          left:
-            offset_left +
-            $('#inner-timeline').offset().left +
-            currenttime / timelinetime,
-        });
-        canvas.renderAll();
-        console.log('Finished rendering');
-      };
+    //   recorder.onstop = (e) => {
+    //     stopAnim();
+    //     downloadRecording(chunks);
+    //     animate(false, 0);
+    //     $('#seekbar').offset({
+    //       left:
+    //         offset_left +
+    //         $('#inner-timeline').offset().left +
+    //         currenttime / timelinetime,
+    //     });
+    //     canvas.renderAll();
+    //     console.log('Finished rendering');
+    //   };
+	recorder.onstop = async (e) => {
+		stopAnim();
+		console.log('start sending');
+		await sendChunksToServer(chunks);
+	}
+	
+	async function sendChunksToServer(chunks) {
+		const formData = new FormData();
+		formData.append('video', new Blob(chunks, { type: 'video/webm' }));
+	
+		const response = await fetch('http://localhost:3000/render', {
+			method: 'POST',
+			body: formData
+		});
+		
+		if (response.ok) {
+			const blob = await response.blob();
+			const url = URL.createObjectURL(blob);
+			
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'rendered-video.webm';
+			a.click();
+		} else {
+			console.error('Fetch Error:', response.status);
+		}
+	}
       recorder.start();
 
       setTimeout(function () {

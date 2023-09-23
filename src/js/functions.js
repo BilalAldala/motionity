@@ -532,35 +532,80 @@ function updateRecordCanvas() {
 }
 
 // Download recording
+// function downloadRecording(chunks) {
+//   $('#download-real').html('Downloading...');
+//   if ($('input[name=radio]:checked').val() == 'webm') {
+//     var url = URL.createObjectURL(
+//       new Blob(chunks, {
+//         type: 'video/webm',
+//       })
+//     );
+//     const a = document.createElement('a');
+//     a.style.display = 'none';
+//     a.href = url;
+//     a.download = name;
+//     document.body.appendChild(a);
+//     a.click();
+//     recording = false;
+//     currenttime = 0;
+//     animate(false, 0);
+//     $('#seekbar').offset({
+//       left:
+//         offset_left +
+//         $('#inner-timeline').offset().left +
+//         currenttime / timelinetime,
+//     });
+//     canvas.renderAll();
+//     resizeCanvas();
+//     $('#download-real').html('Download');
+//     $('#download-real').removeClass('downloading');
+//     updateRecordCanvas();
+//   } else if ($('input[name=radio]:checked').val() == 'mp4') {
+//     type = 'video/mp4';
+//   } else {
+//     convertStreams(new Blob(chunks, { type: 'video/webm' }), 'gif');
+//   }
+// }
+
 function downloadRecording(chunks) {
   $('#download-real').html('Downloading...');
-  if ($('input[name=radio]:checked').val() == 'webm') {
-    var url = URL.createObjectURL(
-      new Blob(chunks, {
-        type: 'video/webm',
-      })
-    );
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    recording = false;
-    currenttime = 0;
-    animate(false, 0);
-    $('#seekbar').offset({
-      left:
-        offset_left +
-        $('#inner-timeline').offset().left +
-        currenttime / timelinetime,
+  const selectedValue = $('input[name=radio]:checked').val();
+  
+  if (selectedValue == 'webm') {
+    // Prepare the form data
+    const formData = new FormData();
+    formData.append('chunks', JSON.stringify(chunks)); // Convert chunks to JSON string
+    formData.append('type', 'video/webm');
+    
+    // Additional data can be appended to formData if needed
+    
+    // Send the form data to the server
+    fetch('http://localhost:3000/render', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return response.blob(); // If successful, read the blob from the response
+    })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      // Use the URL to download the video or display it in a video element
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'rendered-video.webm';
+      a.click();
+    })
+    .catch(error => {
+      console.error('Fetch Error:', error);
+    })
+    .finally(() => {
+      $('#download-real').html('Download');
+      $('#download-real').removeClass('downloading');
     });
-    canvas.renderAll();
-    resizeCanvas();
-    $('#download-real').html('Download');
-    $('#download-real').removeClass('downloading');
-    updateRecordCanvas();
-  } else if ($('input[name=radio]:checked').val() == 'mp4') {
+  } else if (selectedValue == 'mp4') {
     type = 'video/mp4';
   } else {
     convertStreams(new Blob(chunks, { type: 'video/webm' }), 'gif');
