@@ -179,18 +179,21 @@ async function record() {
 		const formData = new FormData();
 		formData.append('video', new Blob(chunks, { type: 'video/webm' }));
 	
-		const response = await fetch('http://localhost:3000/render', {
+		const response = await fetch('http://localhost:3000/render/1', {
 			method: 'POST',
 			body: formData
 		});
 		
 		if (response.ok) {
-			const blob = await response.blob();
-			const url = URL.createObjectURL(blob);
+			const json = await response.json();
+			console.log(json);
+			const newUrl = `/alerts/${json.alertId}`;
+			// const url = URL.createObjectURL(blob);
 			
 			const a = document.createElement('a');
-			a.href = url;
-			a.download = 'rendered-video.webm';
+			a.target = '_blank'
+			a.href = newUrl;
+			// a.download = 'rendered-video.webm';
 			a.click();
 		} else {
 			console.error('Fetch Error:', response.status);
